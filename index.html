@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Кварто-квинтовый круг</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17212b;
+      --muted: #5c6773;
+      --line: #d9e0e8;
+      --panel: #ffffff;
+      --paper: #f5f1e8;
+      --accent: #0e7c7b;
+      --accent-2: #d85f3f;
+      --accent-3: #7353ba;
+      --shadow: 0 18px 50px rgba(35, 38, 44, 0.16);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(135deg, rgba(14, 124, 123, 0.16), transparent 34%),
+        linear-gradient(315deg, rgba(216, 95, 63, 0.16), transparent 32%),
+        var(--paper);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 32px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 28px 0;
+      display: grid;
+      grid-template-columns: minmax(340px, 650px) minmax(320px, 1fr);
+      gap: 28px;
+      align-items: center;
+    }
+
+    .wheel-panel,
+    .info-panel {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid rgba(217, 224, 232, 0.9);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      border-radius: 8px;
+    }
+
+    .wheel-panel {
+      padding: clamp(12px, 2vw, 22px);
+      position: relative;
+    }
+
+    .wheel-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      margin: 4px 4px 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 46px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.45;
+      max-width: 44rem;
+    }
+
+    .direction {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      padding-top: 5px;
+    }
+
+    .direction span {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+      justify-content: end;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.fifth {
+      background: var(--accent);
+    }
+
+    .dot.fourth {
+      background: var(--accent-2);
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+    }
+
+    .segment {
+      cursor: pointer;
+      transition: opacity 140ms ease, filter 140ms ease, transform 140ms ease;
+      transform-origin: 300px 300px;
+      outline: none;
+    }
+
+    .segment:hover,
+    .segment:focus-visible,
+    .segment.active {
+      opacity: 1;
+      filter: drop-shadow(0 6px 10px rgba(20, 28, 36, 0.2));
+      transform: scale(1.012);
+    }
+
+    .segment:not(.active) {
+      opacity: 0.9;
+    }
+
+    .label {
+      pointer-events: none;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      fill: #121a23;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .major-label {
+      font-size: 22px;
+    }
+
+    .minor-label {
+      font-size: 16px;
+      fill: #253241;
+    }
+
+    .center {
+      fill: #fffaf0;
+      stroke: #d7cdc0;
+      stroke-width: 2;
+    }
+
+    .center-text {
+      text-anchor: middle;
+      dominant-baseline: middle;
+      font-size: 17px;
+      font-weight: 800;
+      fill: var(--ink);
+      pointer-events: none;
+    }
+
+    .info-panel {
+      padding: clamp(18px, 3vw, 30px);
+      min-height: min(720px, calc(100vh - 56px));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .keyline {
+      color: var(--accent-2);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .key-title {
+      margin: 8px 0 6px;
+      font-size: clamp(38px, 6vw, 68px);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .key-meta {
+      margin: 0 0 20px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 16px;
+    }
+
+    .section {
+      padding: 17px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section h2 {
+      margin: 0 0 11px;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      min-width: 42px;
+      min-height: 34px;
+      padding: 7px 11px;
+      border-radius: 6px;
+      background: #eef7f6;
+      border: 1px solid #c8e4e2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .degree-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(58px, 1fr));
+      gap: 8px;
+    }
+
+    .degree {
+      min-height: 62px;
+      padding: 9px 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+    }
+
+    .degree small {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .degree strong {
+      font-size: 17px;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin: 10px 0 0;
+    }
+
+    @media (max-width: 920px) {
+      main {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .info-panel {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(100vw - 20px, 520px);
+        padding: 10px 0;
+        gap: 12px;
+      }
+
+      .wheel-heading {
+        display: block;
+      }
+
+      .direction {
+        grid-template-columns: 1fr 1fr;
+        margin-top: 12px;
+      }
+
+      .direction span {
+        justify-content: start;
+        white-space: normal;
+      }
+
+      .degree-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .major-label {
+        font-size: 18px;
+      }
+
+      .minor-label {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="wheel-panel" aria-labelledby="page-title">
+      <div class="wheel-heading">
+        <div>
+          <h1 id="page-title">Кварто-квинтовый круг</h1>
+          <p class="subtitle">Наведи на сектор: справа появятся звуки тональности, диатонические трезвучия и септаккорды.</p>
+        </div>
+        <div class="direction" aria-label="Направления движения по кругу">
+          <span><i class="dot fifth"></i>по часовой: квинты</span>
+          <span><i class="dot fourth"></i>против: кварты</span>
+        </div>
+      </div>
+      <svg id="circle" viewBox="0 0 600 600" role="img" aria-label="Интерактивный кварто-квинтовый круг"></svg>
+    </section>
+
+    <aside class="info-panel" aria-live="polite">
+      <div class="keyline" id="key-type">Major key</div>
+      <h2 class="key-title" id="key-title">C major</h2>
+      <p class="key-meta" id="key-meta">0 знаков при ключе. Параллельная тональность: A minor.</p>
+
+      <section class="section">
+        <h2>Состав тональности</h2>
+        <div class="chips" id="scale"></div>
+      </section>
+
+      <section class="section">
+        <h2>Трезвучия</h2>
+        <div class="degree-grid" id="triads"></div>
+      </section>
+
+      <section class="section">
+        <h2>Септаккорды</h2>
+        <div class="degree-grid" id="sevenths"></div>
+        <p class="hint">В minor показаны аккорды натурального минора.</p>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const circle = document.querySelector("#circle");
+    const scaleEl = document.querySelector("#scale");
+    const triadsEl = document.querySelector("#triads");
+    const seventhsEl = document.querySelector("#sevenths");
+    const keyTypeEl = document.querySelector("#key-type");
+    const keyTitleEl = document.querySelector("#key-title");
+    const keyMetaEl = document.querySelector("#key-meta");
+
+    const majors = [
+      { name: "C major", label: "C", parallel: "A minor", signs: "0 знаков", scale: ["C", "D", "E", "F", "G", "A", "B"] },
+      { name: "G major", label: "G", parallel: "E minor", signs: "1 диез: F#", scale: ["G", "A", "B", "C", "D", "E", "F#"] },
+      { name: "D major", label: "D", parallel: "B minor", signs: "2 диеза: F#, C#", scale: ["D", "E", "F#", "G", "A", "B", "C#"] },
+      { name: "A major", label: "A", parallel: "F# minor", signs: "3 диеза: F#, C#, G#", scale: ["A", "B", "C#", "D", "E", "F#", "G#"] },
+      { name: "E major", label: "E", parallel: "C# minor", signs: "4 диеза: F#, C#, G#, D#", scale: ["E", "F#", "G#", "A", "B", "C#", "D#"] },
+      { name: "B major", label: "B", parallel: "G# minor", signs: "5 диезов: F#, C#, G#, D#, A#", scale: ["B", "C#", "D#", "E", "F#", "G#", "A#"] },
+      { name: "F# / Gb major", label: "F# / Gb", parallel: "D# / Eb minor", signs: "6 диезов или 6 бемолей", scale: ["F#", "G#", "A#", "B", "C#", "D#", "E#"] },
+      { name: "Db major", label: "Db", parallel: "Bb minor", signs: "5 бемолей: Bb, Eb, Ab, Db, Gb", scale: ["Db", "Eb", "F", "Gb", "Ab", "Bb", "C"] },
+      { name: "Ab major", label: "Ab", parallel: "F minor", signs: "4 бемоля: Bb, Eb, Ab, Db", scale: ["Ab", "Bb", "C", "Db", "Eb", "F", "G"] },
+      { name: "Eb major", label: "Eb", parallel: "C minor", signs: "3 бемоля: Bb, Eb, Ab", scale: ["Eb", "F", "G", "Ab", "Bb", "C", "D"] },
+      { name: "Bb major", label: "Bb", parallel: "G minor", signs: "2 бемоля: Bb, Eb", scale: ["Bb", "C", "D", "Eb", "F", "G", "A"] },
+      { name: "F major", label: "F", parallel: "D minor", signs: "1 бемоль: Bb", scale: ["F", "G", "A", "Bb", "C", "D", "E"] }
+    ];
+
+    const minors = [
+      { name: "A minor", label: "Am", parallel: "C major", signs: "0 знаков", scale: ["A", "B", "C", "D", "E", "F", "G"] },
+      { name: "E minor", label: "Em", parallel: "G major", signs: "1 диез: F#", scale: ["E", "F#", "G", "A", "B", "C", "D"] },
+      { name: "B minor", label: "Bm", parallel: "D major", signs: "2 диеза: F#, C#", scale: ["B", "C#", "D", "E", "F#", "G", "A"] },
+      { name: "F# minor", label: "F#m", parallel: "A major", signs: "3 диеза: F#, C#, G#", scale: ["F#", "G#", "A", "B", "C#", "D", "E"] },
+      { name: "C# minor", label: "C#m", parallel: "E major", signs: "4 диеза: F#, C#, G#, D#", scale: ["C#", "D#", "E", "F#", "G#", "A", "B"] },
+      { name: "G# minor", label: "G#m", parallel: "B major", signs: "5 диезов: F#, C#, G#, D#, A#", scale: ["G#", "A#", "B", "C#", "D#", "E", "F#"] },
+      { name: "D# / Eb minor", label: "D#m / Ebm", parallel: "F# / Gb major", signs: "6 диезов или 6 бемолей", scale: ["Eb", "F", "Gb", "Ab", "Bb", "Cb", "Db"] },
+      { name: "Bb minor", label: "Bbm", parallel: "Db major", signs: "5 бемолей: Bb, Eb, Ab, Db, Gb", scale: ["Bb", "C", "Db", "Eb", "F", "Gb", "Ab"] },
+      { name: "F minor", label: "Fm", parallel: "Ab major", signs: "4 бемоля: Bb, Eb, Ab, Db", scale: ["F", "G", "Ab", "Bb", "C", "Db", "Eb"] },
+      { name: "C minor", label: "Cm", parallel: "Eb major", signs: "3 бемоля: Bb, Eb, Ab", scale: ["C", "D", "Eb", "F", "G", "Ab", "Bb"] },
+      { name: "G minor", label: "Gm", parallel: "Bb major", signs: "2 бемоля: Bb, Eb", scale: ["G", "A", "Bb", "C", "D", "Eb", "F"] },
+      { name: "D minor", label: "Dm", parallel: "F major", signs: "1 бемоль: Bb", scale: ["D", "E", "F", "G", "A", "Bb", "C"] }
+    ];
+
+    const majorTriadQualities = ["", "m", "m", "", "", "m", "dim"];
+    const majorSeventhQualities = ["maj7", "m7", "m7", "maj7", "7", "m7", "m7b5"];
+    const minorTriadQualities = ["m", "dim", "", "m", "m", "", ""];
+    const minorSeventhQualities = ["m7", "m7b5", "maj7", "m7", "m7", "maj7", "7"];
+    const romanMajor = ["I", "ii", "iii", "IV", "V", "vi", "vii"];
+    const romanMinor = ["i", "ii", "III", "iv", "v", "VI", "VII"];
+    const colors = ["#f6c85f", "#81c784", "#4db6ac", "#4fc3f7", "#7986cb", "#ba68c8", "#f06292", "#ff8a65", "#a1887f", "#90a4ae", "#aed581", "#ffd54f"];
+
+    function polar(cx, cy, r, angle) {
+      const rad = (angle - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+
+    function wedgePath(cx, cy, innerR, outerR, start, end) {
+      const a = polar(cx, cy, outerR, start);
+      const b = polar(cx, cy, outerR, end);
+      const c = polar(cx, cy, innerR, end);
+      const d = polar(cx, cy, innerR, start);
+      const large = end - start > 180 ? 1 : 0;
+      return [
+        `M ${a.x} ${a.y}`,
+        `A ${outerR} ${outerR} 0 ${large} 1 ${b.x} ${b.y}`,
+        `L ${c.x} ${c.y}`,
+        `A ${innerR} ${innerR} 0 ${large} 0 ${d.x} ${d.y}`,
+        "Z"
+      ].join(" ");
+    }
+
+    function chordName(root, quality) {
+      if (!quality) return root;
+      return `${root}${quality}`;
+    }
+
+    function rotateScale(scale, degree) {
+      return scale.slice(degree).concat(scale.slice(0, degree));
+    }
+
+    function chordsFor(key, mode, seventh = false) {
+      const qualities = mode === "major"
+        ? (seventh ? majorSeventhQualities : majorTriadQualities)
+        : (seventh ? minorSeventhQualities : minorTriadQualities);
+      const romans = mode === "major" ? romanMajor : romanMinor;
+      return key.scale.map((note, index) => ({
+        degree: romans[index],
+        chord: chordName(note, qualities[index]),
+        tones: rotateScale(key.scale, index).filter((_, toneIndex) => toneIndex % 2 === 0).slice(0, seventh ? 4 : 3)
+      }));
+    }
+
+    function renderChords(container, chords) {
+      container.innerHTML = chords.map(item => `
+        <div class="degree" title="${item.tones.join(" - ")}">
+          <small>${item.degree}</small>
+          <strong>${item.chord}</strong>
+        </div>
+      `).join("");
+    }
+
+    function renderKey(key, mode) {
+      const modeText = mode === "major" ? "Major key" : "Minor key";
+      keyTypeEl.textContent = modeText;
+      keyTitleEl.textContent = key.name;
+      keyMetaEl.textContent = `${key.signs}. Параллельная тональность: ${key.parallel}.`;
+      scaleEl.innerHTML = key.scale.map(note => `<span class="chip">${note}</span>`).join("");
+      renderChords(triadsEl, chordsFor(key, mode));
+      renderChords(seventhsEl, chordsFor(key, mode, true));
+
+      document.querySelectorAll(".segment").forEach(segment => {
+        segment.classList.toggle("active", segment.dataset.name === key.name);
+      });
+    }
+
+    function addSegment(key, mode, index, innerR, outerR) {
+      const start = index * 30 - 15;
+      const end = start + 30;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", wedgePath(300, 300, innerR, outerR, start, end));
+      path.setAttribute("fill", mode === "major" ? colors[index] : shade(colors[index], -18));
+      path.setAttribute("stroke", "#ffffff");
+      path.setAttribute("stroke-width", "3");
+      path.setAttribute("class", "segment");
+      path.setAttribute("tabindex", "0");
+      path.setAttribute("role", "button");
+      path.setAttribute("aria-label", key.name);
+      path.dataset.name = key.name;
+      path.addEventListener("mouseenter", () => renderKey(key, mode));
+      path.addEventListener("focus", () => renderKey(key, mode));
+      path.addEventListener("click", () => renderKey(key, mode));
+      circle.appendChild(path);
+
+      const labelRadius = (innerR + outerR) / 2;
+      const labelPoint = polar(300, 300, labelRadius, start + 15);
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", labelPoint.x);
+      text.setAttribute("y", labelPoint.y);
+      text.setAttribute("class", `label ${mode === "major" ? "major-label" : "minor-label"}`);
+      text.textContent = key.label;
+      circle.appendChild(text);
+    }
+
+    function shade(hex, percent) {
+      const number = parseInt(hex.slice(1), 16);
+      const amount = Math.round(2.55 * percent);
+      const r = Math.max(0, Math.min(255, (number >> 16) + amount));
+      const g = Math.max(0, Math.min(255, ((number >> 8) & 0x00ff) + amount));
+      const b = Math.max(0, Math.min(255, (number & 0x0000ff) + amount));
+      return `#${(0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1)}`;
+    }
+
+    majors.forEach((key, index) => addSegment(key, "major", index, 188, 284));
+    minors.forEach((key, index) => addSegment(key, "minor", index, 88, 184));
+
+    const center = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    center.setAttribute("cx", "300");
+    center.setAttribute("cy", "300");
+    center.setAttribute("r", "72");
+    center.setAttribute("class", "center");
+    circle.appendChild(center);
+
+    const centerLines = ["major", "minor"];
+    centerLines.forEach((line, index) => {
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", "300");
+      text.setAttribute("y", String(286 + index * 30));
+      text.setAttribute("class", "center-text");
+      text.textContent = line;
+      circle.appendChild(text);
+    });
+
+    renderKey(majors[0], "major");
+  </script>
+</body>
+</html>
