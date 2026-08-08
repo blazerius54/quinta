@@ -244,9 +244,27 @@
       border: 1px solid var(--line);
       border-radius: 6px;
       background: #fff;
+      color: inherit;
+      cursor: pointer;
       display: grid;
       align-content: center;
       gap: 5px;
+      font: inherit;
+      text-align: left;
+      transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+      width: 100%;
+    }
+
+    .degree:hover,
+    .degree:focus-visible,
+    .degree[aria-expanded="true"] {
+      border-color: #9ccfcb;
+      box-shadow: 0 8px 18px rgba(20, 28, 36, 0.1);
+    }
+
+    .degree:focus-visible {
+      outline: 3px solid rgba(14, 124, 123, 0.25);
+      outline-offset: 2px;
     }
 
     .degree small {
@@ -259,6 +277,19 @@
       font-size: 17px;
       line-height: 1.1;
       overflow-wrap: anywhere;
+    }
+
+    .chord-tones {
+      color: var(--accent);
+      display: none;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .degree[aria-expanded="true"] .chord-tones {
+      display: block;
     }
 
     .hint {
@@ -443,11 +474,19 @@
 
     function renderChords(container, chords) {
       container.innerHTML = chords.map(item => `
-        <div class="degree" title="${item.tones.join(" - ")}">
+        <button class="degree" type="button" aria-expanded="false" aria-label="${item.chord}: ${item.tones.join(" - ")}">
           <small>${item.degree}</small>
           <strong>${item.chord}</strong>
-        </div>
+          <span class="chord-tones">${item.tones.join(" - ")}</span>
+        </button>
       `).join("");
+
+      container.querySelectorAll(".degree").forEach(degree => {
+        degree.addEventListener("click", () => {
+          const isExpanded = degree.getAttribute("aria-expanded") === "true";
+          degree.setAttribute("aria-expanded", String(!isExpanded));
+        });
+      });
     }
 
     function renderKey(key, mode) {
