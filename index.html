@@ -477,9 +477,13 @@
       path.setAttribute("role", "button");
       path.setAttribute("aria-label", key.name);
       path.dataset.name = key.name;
-      path.addEventListener("mouseenter", () => renderKey(key, mode));
-      path.addEventListener("focus", () => renderKey(key, mode));
       path.addEventListener("click", () => renderKey(key, mode));
+      path.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          renderKey(key, mode);
+        }
+      });
       circle.appendChild(path);
 
       const labelRadius = (innerR + outerR) / 2;
